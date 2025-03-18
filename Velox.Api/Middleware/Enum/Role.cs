@@ -2,8 +2,8 @@
 {
     public enum Role
     {
-        Associate = 1,
-        Athelete = 2,
+        Athelete = 1,
+        Associate = 2,
         Employee = 3
     }
 }

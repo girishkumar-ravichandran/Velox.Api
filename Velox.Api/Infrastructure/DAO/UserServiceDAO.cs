@@ -15,7 +15,7 @@ namespace Velox.Api.Infrastructure.DAO
             _connectionString = dbConfigService.GetConnectionString();
         }
 
-        public async Task<bool> RegisterUserAsync(UserDTO user)
+        public async Task<(bool isSuccess, string message)> RegisterUserAsync(UserDTO user)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -34,17 +34,28 @@ namespace Velox.Api.Infrastructure.DAO
                     cmd.Parameters.AddWithValue("p_phoneNumber", user.PhoneNumber);
                     cmd.Parameters.AddWithValue("p_role", user.Role);
 
-                    // Output Parameter
-                    var successParam = new MySqlParameter("is_success", MySqlDbType.Bit)
+                    // Output Parameters
+                    var successParam = new MySqlParameter("op_issuccess", MySqlDbType.Bit)
                     {
                         Direction = ParameterDirection.Output
                     };
                     cmd.Parameters.Add(successParam);
 
+                    var messageParam = new MySqlParameter("op_messagetext", MySqlDbType.VarChar, 100)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(messageParam);
+
                     try
                     {
                         await cmd.ExecuteNonQueryAsync();
-                        return Convert.ToBoolean(successParam.Value); // Returns true if registration is successful
+
+                        // Retrieve output parameters
+                        bool isSuccess = Convert.ToBoolean(successParam.Value);
+                        string message = messageParam.Value?.ToString();
+
+                        return (isSuccess, message); // Return the result along with the message
                     }
                     catch (MySqlException ex)
                     {
@@ -54,13 +65,15 @@ namespace Velox.Api.Infrastructure.DAO
             }
         }
 
-        public async Task<bool> ValidateUserLoginAsync(string username, string password)
+
+        public async Task<(bool isLoginSuccess, bool isUserLocked, bool isUserValidated, bool isPendingRegistration, string message)> ValidateUserLoginAsync(string username, string password)
         {
             try
             {
                 using (var connection = new MySqlConnection(_connectionString))
                 {
                     await connection.OpenAsync();
+
                     using (var command = new MySqlCommand("sp_validateUserLogin", connection))
                     {
                         command.CommandType = CommandType.StoredProcedure;
@@ -69,25 +82,157 @@ namespace Velox.Api.Infrastructure.DAO
                         command.Parameters.AddWithValue("p_username", username);
                         command.Parameters.AddWithValue("p_password", password);
 
-                        // Output Parameter
-                        var isValidParam = new MySqlParameter("is_valid", MySqlDbType.Bit)
+                        // Output Parameters
+                        var isLoginSuccessParam = new MySqlParameter("op_isloginsuccess", MySqlDbType.Bit)
                         {
                             Direction = ParameterDirection.Output
                         };
-                        command.Parameters.Add(isValidParam);
+                        command.Parameters.Add(isLoginSuccessParam);
+
+                        var isUserLockedParam = new MySqlParameter("op_isuserlocked", MySqlDbType.Bit)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(isUserLockedParam);
+
+                        var isUserValidatedParam = new MySqlParameter("op_isuservalidated", MySqlDbType.Bit)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(isUserValidatedParam);
+
+                        var isPendingRegistrationParam = new MySqlParameter("op_ispendingregistration", MySqlDbType.Bit)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(isPendingRegistrationParam);
+
+                        var messageParam = new MySqlParameter("op_messagetext", MySqlDbType.VarChar, 100)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(messageParam);
 
                         await command.ExecuteNonQueryAsync();
 
-                        // Retrieve output parameter value
-                        return Convert.ToBoolean(isValidParam.Value);
+                        // Retrieve output parameter values
+                        bool isLoginSuccess = Convert.ToBoolean(isLoginSuccessParam.Value);
+                        bool isUserLocked = Convert.ToBoolean(isUserLockedParam.Value);
+                        bool isUserValidated = Convert.ToBoolean(isUserValidatedParam.Value);
+                        bool isPendingRegistration = Convert.ToBoolean(isPendingRegistrationParam.Value);
+                        string message = messageParam.Value?.ToString();
+
+                        return (isLoginSuccess, isUserLocked, isUserValidated, isPendingRegistration, message);
                     }
                 }
             }
             catch (MySqlException ex)
             {
                 Console.WriteLine($"Database error: {ex.Message}");
-                return false;
+                return (false, false, false, false, $"Error: {ex.Message}");
             }
         }
+
+
+        public async Task<(bool isSuccess, string message)> ValidateUserOTPAsync(string username, string otp)
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new MySqlCommand("sp_ValidateUserOTP", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        // Input Parameters
+                        command.Parameters.AddWithValue("p_username", username);
+                        command.Parameters.AddWithValue("p_otp", otp);
+
+                        // Output Parameters
+                        var isSuccessParam = new MySqlParameter("op_issuccess", MySqlDbType.Bit)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(isSuccessParam);
+
+                        var messageParam = new MySqlParameter("op_messagetext", MySqlDbType.VarChar, 100)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(messageParam);
+
+                        // Execute the command
+                        await command.ExecuteNonQueryAsync();
+
+                        // Retrieve the output parameters
+                        bool isSuccess = Convert.ToBoolean(isSuccessParam.Value);
+                        string message = messageParam.Value.ToString();
+
+                        return (isSuccess, message);
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+                return (false, "Error: Database operation failed");
+            }
+        }
+
+        public async Task<(string otp, string smtp, bool isSuccess, string message)> GetUserOTPAsync(string username)
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new MySqlCommand("sp_getUserOTP", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.Parameters.AddWithValue("p_username", username);
+
+                        var otpParam = new MySqlParameter("op_otp", MySqlDbType.VarChar, 6)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(otpParam);
+
+                        var smtpParam = new MySqlParameter("op_smtp", MySqlDbType.VarChar, 50)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(smtpParam);
+
+                        var isSuccessParam = new MySqlParameter("op_issuccess", MySqlDbType.Bit)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(isSuccessParam);
+
+                        var messageParam = new MySqlParameter("op_messagetext", MySqlDbType.VarChar, 100)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(messageParam);
+
+                        await command.ExecuteNonQueryAsync();
+
+                        string otp = otpParam.Value.ToString();
+                        string smtp = smtpParam.Value.ToString();
+                        bool isSuccess = Convert.ToBoolean(isSuccessParam.Value);
+                        string message = messageParam.Value.ToString();
+
+                        return (otp, smtp, isSuccess, message);
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+                return (null, null, false, "Database error: Unable to retrieve OTP.");
+            }
+        }
+
     }
 }

@@ -19,9 +19,9 @@ namespace Velox.Api.Features.User.Handlers
 
         public async Task<LoginResponseDTO> Handle(LoginUserCommand request, CancellationToken cancellationToken)
         {
-            bool isAuthorized = await _userServiceDAO.ValidateUserLoginAsync(request.Email, request.Password);
+            var result = await _userServiceDAO.ValidateUserLoginAsync(request.Email, request.Password);
 
-            if (isAuthorized == false)
+            if (!result.isLoginSuccess)
             {
                 throw new UnauthorizedAccessException();
             }

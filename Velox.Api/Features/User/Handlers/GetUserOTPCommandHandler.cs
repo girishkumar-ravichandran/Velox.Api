@@ -1,0 +1,32 @@
+﻿using MediatR;
+using Velox.Api.Features.User.Commands;
+using Velox.Api.Infrastructure.DTO;
+using Velox.Api.Infrastructure.Interface;
+using Velox.Api.Middleware.Services.Interfaces;
+
+
+namespace Velox.Api.Features.User.Handlers
+{
+    public class GetUserOTPCommandHandler : IRequestHandler<GetUserOTPCommand, GetUserOTPResponseDTO>
+    {
+        private readonly IUserServiceDAO _userServiceDAO;
+
+        public GetUserOTPCommandHandler(IUserServiceDAO userServiceDAO)
+        {
+            _userServiceDAO = userServiceDAO;
+        }
+
+        public async Task<GetUserOTPResponseDTO> Handle(GetUserOTPCommand request, CancellationToken cancellationToken)
+        {
+            var result = await _userServiceDAO.GetUserOTPAsync(request.Username);
+
+            return new GetUserOTPResponseDTO
+            {
+                OTP = result.otp,
+                SMTP = result.smtp,
+                IsSuccess = result.isSuccess,
+                Message = result.message
+            };
+        }
+    }
+}

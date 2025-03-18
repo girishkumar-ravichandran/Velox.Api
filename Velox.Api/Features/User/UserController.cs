@@ -44,5 +44,55 @@ namespace Velox.Api.Controllers
                 return Unauthorized(new { message = "Invalid email or password." });
             }
         }
+
+        [HttpPost("validate-otp")]
+        public async Task<IActionResult> ValidateOTP([FromBody] ValidateUserOTPCommand command)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var response = await _mediator.Send(command);
+
+                if (response.IsSuccess)
+                {
+                    return Ok(response); 
+                }
+                else
+                {
+                    return BadRequest(response); 
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", details = ex.Message });
+            }
+        }
+
+        [HttpPost("get-otp")]
+        public async Task<IActionResult> GetOTP([FromBody] GetUserOTPCommand command)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var response = await _mediator.Send(command);
+
+                if (response.IsSuccess)
+                {
+                    return Ok(response);
+                }
+                else
+                {
+                    return BadRequest(response);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", details = ex.Message });
+            }
+        }
     }
 }
