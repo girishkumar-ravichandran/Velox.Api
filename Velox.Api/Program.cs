@@ -31,6 +31,7 @@ builder.Services.AddTransient<ISponserServiceDAO, SponserServiceDAO>();
 builder.Services.AddTransient<IPanelistServiceDAO, PanelistServiceDAO>();
 builder.Services.AddTransient<IMarqueeServiceDAO, MarqueeServiceDAO>();
 builder.Services.AddTransient<ITokenService, TokenService>();
+builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddTransient<IPasswordService, PasswordService>();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
