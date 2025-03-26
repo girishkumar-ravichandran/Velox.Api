@@ -21,7 +21,7 @@ namespace Velox.Api.Middleware.Services
             {
                 string combined = password + salt;
                 byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(combined));
-                return BitConverter.ToString(hashBytes).Replace("-", "").ToUpper();
+                return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
             }
         }
 

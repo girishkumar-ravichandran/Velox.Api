@@ -22,9 +22,9 @@ namespace Velox.Api.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var userDto = await _mediator.Send(command);
+            var response = await _mediator.Send(command);
 
-            return Ok(new { message = "User registered successfully" });
+            return Ok(response);
         }
 
         [HttpPost("login")]

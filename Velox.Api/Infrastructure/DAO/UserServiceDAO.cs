@@ -33,6 +33,8 @@ namespace Velox.Api.Infrastructure.DAO
                     cmd.Parameters.AddWithValue("p_dob", user.DOB);
                     cmd.Parameters.AddWithValue("p_phoneNumber", user.PhoneNumber);
                     cmd.Parameters.AddWithValue("p_role", user.Role);
+                    cmd.Parameters.AddWithValue("p_firstName", user.FirstName);
+                    cmd.Parameters.AddWithValue("p_lastName", user.LastName);
 
                     // Output Parameters
                     var successParam = new MySqlParameter("op_issuccess", MySqlDbType.Bit)

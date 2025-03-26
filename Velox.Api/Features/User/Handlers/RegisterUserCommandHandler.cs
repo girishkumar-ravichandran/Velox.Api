@@ -7,7 +7,7 @@ using Velox.Api.Middleware.Services.Interfaces;
 
 namespace Velox.Api.Features.User.Handlers
 {
-    public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, UserDTO>
+    public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, RegisterResponseDTO>
     {
         private readonly IUserServiceDAO _userServiceDAO;
         private readonly IPasswordService _passwordService;
@@ -18,7 +18,7 @@ namespace Velox.Api.Features.User.Handlers
             _passwordService = passwordService;
         }
 
-        public async Task<UserDTO> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
+        public async Task<RegisterResponseDTO> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
         {
             var salt = _passwordService.GenerateSalt(request.Email);
             var passwordHash = _passwordService.HashPassword(request.PasswordHash, salt);
@@ -31,15 +31,21 @@ namespace Velox.Api.Features.User.Handlers
                 PhoneNumber = request.PhoneNumber,
                 PasswordHash = passwordHash,
                 Gender = GenderEnum,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
                 Role = RoleEnum,
                 DOB = request.DOB,
                 PasswordSalt = salt
 
             };
 
-            await _userServiceDAO.RegisterUserAsync(user);
+            var result = await _userServiceDAO.RegisterUserAsync(user);
 
-            return user;
+            return new RegisterResponseDTO
+            {
+                Email = request.Email,
+                IsRegistrationSuccess = result.isSuccess,
+            };
         }
     }
 }

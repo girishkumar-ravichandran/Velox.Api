@@ -34,7 +34,10 @@ namespace Velox.Api.Features.User.Handlers
             {
                 Token = token,
                 Email = request.Email,
-
+                IsLoginSuccess = result.isLoginSuccess,
+                IsUserLocked = result.isUserLocked,
+                IsUserValidated = result.isUserValidated,
+                IsPendingRegistration = result.isPendingRegistration
             };
         }
 
