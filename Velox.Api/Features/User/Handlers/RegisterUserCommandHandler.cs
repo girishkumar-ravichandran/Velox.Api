@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Velox.Api.Features.User.Commands;
 using Velox.Api.Infrastructure.DTO;
+using Velox.Api.Infrastructure.DTO.ResponseDTO;
 using Velox.Api.Infrastructure.Interface;
 using Velox.Api.Middleware.Enum;
 using Velox.Api.Middleware.Services.Interfaces;
@@ -44,7 +45,7 @@ namespace Velox.Api.Features.User.Handlers
             return new RegisterResponseDTO
             {
                 Email = request.Email,
-                IsRegistrationSuccess = result.isSuccess,
+                IsRegistrationSuccess = result.IsRegistrationSuccess,
             };
         }
     }

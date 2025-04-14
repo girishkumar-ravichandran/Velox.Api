@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using MySqlConnector;
 using Velox.Api.Infrastructure.DTO;
+using Velox.Api.Infrastructure.DTO.ResponseDTO;
 using Velox.Api.Infrastructure.Interface;
 using Velox.Api.Middleware.Services;
 
@@ -15,7 +16,7 @@ namespace Velox.Api.Infrastructure.DAO
             _connectionString = dbConfigService.GetConnectionString();
         }
 
-        public async Task<(bool isSuccess, string message)> RegisterUserAsync(UserDTO user)
+        public async Task<RegisterResponseDTO> RegisterUserAsync(UserDTO user)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -53,11 +54,13 @@ namespace Velox.Api.Infrastructure.DAO
                     {
                         await cmd.ExecuteNonQueryAsync();
 
-                        // Retrieve output parameters
                         bool isSuccess = Convert.ToBoolean(successParam.Value);
                         string message = messageParam.Value?.ToString();
 
-                        return (isSuccess, message); // Return the result along with the message
+                        return new RegisterResponseDTO
+                        {
+                            IsRegistrationSuccess = Convert.ToBoolean(successParam.Value),
+                        };
                     }
                     catch (MySqlException ex)
                     {
@@ -68,7 +71,7 @@ namespace Velox.Api.Infrastructure.DAO
         }
 
 
-        public async Task<(bool isLoginSuccess, bool isUserLocked, bool isUserValidated, bool isPendingRegistration, string message)> ValidateUserLoginAsync(string username, string password)
+        public async Task<LoginResponseDTO> ValidateUserLoginAsync(string username, string password)
         {
             try
             {
@@ -124,19 +127,25 @@ namespace Velox.Api.Infrastructure.DAO
                         bool isPendingRegistration = Convert.ToBoolean(isPendingRegistrationParam.Value);
                         string message = messageParam.Value?.ToString();
 
-                        return (isLoginSuccess, isUserLocked, isUserValidated, isPendingRegistration, message);
+                        return new LoginResponseDTO
+                        {
+                            Email = username,
+                            IsLoginSuccess = Convert.ToBoolean(isLoginSuccessParam.Value),
+                            IsUserLocked = Convert.ToBoolean(isUserLockedParam.Value),
+                            IsUserValidated = Convert.ToBoolean(isUserValidatedParam.Value),
+                            IsPendingRegistration = Convert.ToBoolean(isPendingRegistrationParam.Value),
+                        };
                     }
                 }
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"Database error: {ex.Message}");
-                return (false, false, false, false, $"Error: {ex.Message}");
+                throw new Exception($"Database error: {ex.Message}");
             }
         }
 
 
-        public async Task<(bool isSuccess, string message)> ValidateUserOTPAsync(string username, string otp)
+        public async Task<ValidateUserOTPResponseDTO> ValidateUserOTPAsync(string username, string otp)
         {
             try
             {
@@ -147,11 +156,9 @@ namespace Velox.Api.Infrastructure.DAO
                     {
                         command.CommandType = CommandType.StoredProcedure;
 
-                        // Input Parameters
                         command.Parameters.AddWithValue("p_username", username);
                         command.Parameters.AddWithValue("p_otp", otp);
 
-                        // Output Parameters
                         var isSuccessParam = new MySqlParameter("op_issuccess", MySqlDbType.Bit)
                         {
                             Direction = ParameterDirection.Output
@@ -164,25 +171,23 @@ namespace Velox.Api.Infrastructure.DAO
                         };
                         command.Parameters.Add(messageParam);
 
-                        // Execute the command
                         await command.ExecuteNonQueryAsync();
 
-                        // Retrieve the output parameters
-                        bool isSuccess = Convert.ToBoolean(isSuccessParam.Value);
-                        string message = messageParam.Value.ToString();
-
-                        return (isSuccess, message);
+                        return new ValidateUserOTPResponseDTO
+                        {
+                            IsSuccess = Convert.ToBoolean(isSuccessParam.Value),
+                            Message = messageParam.Value?.ToString()
+                        };
                     }
                 }
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"Database error: {ex.Message}");
-                return (false, "Error: Database operation failed");
+                throw new Exception($"Database error: {ex.Message}");
             }
         }
 
-        public async Task<(string otp, string smtp, bool isSuccess, string message)> GetUserOTPAsync(string username)
+        public async Task<GetUserOTPResponseDTO> GetUserOTPAsync(string username)
         {
             try
             {
@@ -225,16 +230,68 @@ namespace Velox.Api.Infrastructure.DAO
                         bool isSuccess = Convert.ToBoolean(isSuccessParam.Value);
                         string message = messageParam.Value.ToString();
 
-                        return (otp, smtp, isSuccess, message);
+                        return new GetUserOTPResponseDTO
+                        {
+                            OTP = otpParam.Value?.ToString(),
+                            SMTP = smtpParam.Value?.ToString(),
+                            IsSuccess = Convert.ToBoolean(isSuccessParam.Value),
+                            Message = messageParam.Value?.ToString()
+                        };
                     }
                 }
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"Database error: {ex.Message}");
-                return (null, null, false, "Database error: Unable to retrieve OTP.");
+                throw new Exception($"Database error: {ex.Message}");
             }
         }
+
+        public async Task<ForgetPasswordResponseDTO> ForgetPasswordAsync(string Email, string newPasswordHash)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (var cmd = new MySqlCommand("sp_resetUserPassword", connection))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("p_email", Email);
+                    cmd.Parameters.AddWithValue("p_newPasswordHash", newPasswordHash);
+
+                    var successParam = new MySqlParameter("op_issuccess", MySqlDbType.Bit)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(successParam);
+
+                    var messageParam = new MySqlParameter("op_messagetext", MySqlDbType.VarChar, 100)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(messageParam);
+
+                    try
+                    {
+                        await cmd.ExecuteNonQueryAsync();
+
+                        bool isSuccess = Convert.ToBoolean(successParam.Value);
+                        string message = messageParam.Value?.ToString();
+
+                        return new ForgetPasswordResponseDTO
+                        {
+                            IsSuccess = Convert.ToBoolean(successParam.Value),
+                            Message = messageParam.Value?.ToString()
+                        };
+                    }
+                    catch (MySqlException ex)
+                    {
+                        throw new Exception($"Database error: {ex.Message}");
+                    }
+                }
+            }
+        }
+
 
     }
 }

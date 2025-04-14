@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Velox.Api.Features.User.Commands;
-using Velox.Api.Infrastructure.DTO;
+using Velox.Api.Infrastructure.DTO.ResponseDTO;
 using Velox.Api.Infrastructure.Interface;
 using Velox.Api.Middleware.Services.Interfaces;
 
@@ -21,7 +21,7 @@ namespace Velox.Api.Features.User.Handlers
         {
             var result = await _userServiceDAO.ValidateUserLoginAsync(request.Email, request.Password);
 
-            if (!result.isLoginSuccess)
+            if (!result.IsLoginSuccess)
             {
                 throw new UnauthorizedAccessException();
             }
@@ -34,10 +34,10 @@ namespace Velox.Api.Features.User.Handlers
             {
                 Token = token,
                 Email = request.Email,
-                IsLoginSuccess = result.isLoginSuccess,
-                IsUserLocked = result.isUserLocked,
-                IsUserValidated = result.isUserValidated,
-                IsPendingRegistration = result.isPendingRegistration
+                IsLoginSuccess = result.IsLoginSuccess,
+                IsUserLocked = result.IsUserLocked,
+                IsUserValidated = result.IsUserValidated,
+                IsPendingRegistration = result.IsPendingRegistration
             };
         }
 

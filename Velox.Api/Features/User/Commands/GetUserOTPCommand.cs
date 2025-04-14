@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using Velox.Api.Infrastructure.DTO;
+using Velox.Api.Infrastructure.DTO.ResponseDTO;
 
 namespace Velox.Api.Features.User.Commands
 {

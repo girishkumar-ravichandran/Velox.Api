@@ -1,6 +1,6 @@
-﻿using Velox.Api.Infrastructure.DTO;
-using MediatR;
+﻿using MediatR;
 using Velox.Api.Middleware.Enum;
+using Velox.Api.Infrastructure.DTO.ResponseDTO;
 
 namespace Velox.Api.Features.User.Commands
 {

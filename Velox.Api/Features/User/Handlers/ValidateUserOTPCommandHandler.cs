@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Velox.Api.Features.User.Commands;
-using Velox.Api.Infrastructure.DTO;
+using Velox.Api.Infrastructure.DTO.ResponseDTO;
 using Velox.Api.Infrastructure.Interface;
 using Velox.Api.Middleware.Services.Interfaces;
 
@@ -22,8 +22,8 @@ namespace Velox.Api.Features.User.Handlers
 
             return new ValidateUserOTPResponseDTO
             {
-                IsSuccess = result.isSuccess,
-                Message = result.message
+                IsSuccess = result.IsSuccess,
+                Message = result.Message
             };
         }
     }

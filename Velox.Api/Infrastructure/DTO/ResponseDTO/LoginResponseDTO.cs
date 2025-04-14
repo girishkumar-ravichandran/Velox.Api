@@ -1,4 +1,4 @@
-﻿namespace Velox.Api.Infrastructure.DTO
+﻿namespace Velox.Api.Infrastructure.DTO.ResponseDTO
 {
     public class LoginResponseDTO
     {
